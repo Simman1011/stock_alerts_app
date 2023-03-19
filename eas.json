@@ -11,15 +11,17 @@
       }
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
+      "android": {
+        "buildType": "apk"
       }
     },
-    "production": {
-      "ios": {
-        "resourceClass": "m-medium"
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
       }
+    },
+    "preview3": {
+      "developmentClient": true
     }
   },
   "submit": {

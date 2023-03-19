@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, Button } from 'react-native'
+import { View, Text, StyleSheet, Image, Button, TouchableOpacity } from 'react-native'
 import React,{useState, useEffect} from 'react'
 import * as Notifications from "expo-notifications";
 
@@ -16,12 +16,15 @@ const baseUrl = 'https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/';
 
 export default function StockCard(props) {
 
+    let { stockData } = props;
+
     const [stock, setStock] = useState({})
+    const [isMute, seIsMute] = useState(false)
 
     useEffect(() => {
       // setInterval(() => {
-        getStockData(props.stockId)
-      // }, 5000);
+        getStockData(stockData.id)
+      // }, 10000);
     }, [])
 
     function roundToTwo(num) {
@@ -33,44 +36,80 @@ export default function StockCard(props) {
         await axios.get(`${baseUrl}/${id}`).then((response) => {
             let res = response.data.data;
             if (res) {
-                stock['logo'] = props.stockLogo;
+                stock['logo'] = stockData.logo;
                 stock['name'] = res.NSEID;
                 stock['currPrice'] = Number(res.pricecurrent);
                 stock['priceChange'] = roundToTwo(res.pricechange);
                 stock['pricepercentchange'] = roundToTwo(res.pricepercentchange);
-                console.log(stock);
+                stock['buyPrice'] = stockData.buyPrice;
+                stock['target'] = stockData.target;
+                // console.log(notifySended.find(ns => ns === id));
+                console.log(isMute);
+                if (!isMute) {
+                  if ((Number(res.pricecurrent)) <= stockData.buyPrice) {
+                    triggerNotifications({
+                      title: "Stock on buy range 🔔",
+                      body: `${stock.name} stock price cross Rs.${stock.buyPrice}`,
+                    })
+                  }
+                  if ((Number(res.pricecurrent)) >= stockData.target) {
+                    triggerNotifications({
+                      title: "Trade hit the target 💥",
+                      body: `${stock.name} stock price cross Rs.${stock.target}`,
+                    })
+                  } 
+                }
+                // console.log(stock);
                 setStock(stock)
             }
         });
     }
 
-    const triggerNotifications = async () => {
+    // const toggleStockMute = (name) =>{
+    //   let stocks = muteStocks;
+    //   let index = stocks.indexOf(name)
+    //   if (index) {
+    //     stocks.splice(index, 1);
+    //     setMuteStocks(stocks);
+    //   }else{
+    //     setMuteStocks([...muteStocks, name])
+    //   }
+    // }
+
+    const triggerNotifications = async (notifyMeg) => {
       const hasPushNotificationPermissionGranted = await allowsNotificationsAsync()
 
       if(hasPushNotificationPermissionGranted){
         await Notifications.scheduleNotificationAsync({
         content: {
-          title: "You’ve got mail! 📬",
-          body: "Here is the notification body",
+          title: notifyMeg.title,
+          body: notifyMeg.body,
           data: { data: "goes here" },
         },
-        trigger: { seconds: 10 },
+        sound: 'default',
+        trigger: { seconds: 1 },
         });
       }
     }
 
   return (
-    <View style={styles.stockCard}>
+    <TouchableOpacity style={styles.stockCard} onPress={()=>seIsMute(!isMute)}>
+        {isMute &&
+          <Text style={styles.muteIcon}>🔕</Text>
+        }
         <Image style={styles.stockLogo} source={{uri:stock.logo}} />
-        <View style={{paddingStart: 15}}>
-        <Text style={styles.stockName}>{stock.name}</Text>
+        <View style={{paddingStart: 12}}>
+          <Text style={styles.stockName}>{stock.name}</Text>
           <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-              <Text style={styles.stockPrice}>{stock.currPrice}</Text>
-              <Text style={styles.stockPriceDetails}>{stock.priceChange} ({stock.pricepercentchange})</Text>
+            <Text style={styles.stockPrice}>{stock.currPrice}</Text>
+            <Text style={styles.stockPriceDetails}>{stock.priceChange} ({stock.pricepercentchange})</Text>
           </View>
         </View>
-        <Button onPress={triggerNotifications} title="Trigger" color="#841584" accessibilityLabel="Trigger Local Notifications"/>  
-    </View>
+        <View style={styles.buyText}>
+          <Text style={styles.stockBuyPrice}>📍 {stock.buyPrice}</Text>
+          <Text style={styles.stockBuyPrice}>🎯 {stock.target}</Text>
+        </View>
+    </TouchableOpacity>
   )
 }
 
@@ -82,7 +121,8 @@ export async function allowsNotificationsAsync() {
 }
 
 const styles = StyleSheet.create({
-    stockCard:{
+      stockCard:{
+        position: 'relative',
         flexDirection: 'row',
         width: '100%',
         padding: 10,
@@ -112,6 +152,30 @@ const styles = StyleSheet.create({
         paddingStart: 6,
         paddingBottom: 2,
         color: "#fff",
+      },
+      buyText:{
+        paddingStart: 10,
+        marginStart: 15,
+        borderLeftWidth: 1,
+        borderColor: '#fff',
+      },
+      label:{
+        fontFamily: 'Inter_600SemiBold',
+        fontSize: 12,
+        paddingBottom: 2,
+        color: "#fff",
+      },
+      stockBuyPrice:{
+        fontFamily: 'Inter_700Bold',
+        fontSize: 16,
+        color: "#fff",
+      },
+      muteIcon:{
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        fontSize: 20,
+        zIndex: 1
       }
 });
   

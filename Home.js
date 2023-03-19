@@ -4,11 +4,15 @@ import React from 'react'
 const stockData = [
     {
         id: 'ICI02',
-        logo: 'https://asset.brandfetch.io/idJHpX8apR/ids8EgwKY1.png'
+        logo: 'https://asset.brandfetch.io/idJHpX8apR/ids8EgwKY1.png',
+        buyPrice: 820,
+        target: 830
     },
     {
         id: 'UTI10',
-        logo: 'https://play-lh.googleusercontent.com/nNyS8pk_qjq2BNwGO6ESd8B52HRiMWDvDabNKyUu28uwmVUgxcBWOGkEraUNEQmZHPA=w240-h480-rw'
+        logo: 'https://play-lh.googleusercontent.com/nNyS8pk_qjq2BNwGO6ESd8B52HRiMWDvDabNKyUu28uwmVUgxcBWOGkEraUNEQmZHPA=w240-h480-rw',
+        buyPrice: 820,
+        target: 830
     },
 ]
 
@@ -21,7 +25,7 @@ export default function Home() {
       {stockData && stockData.length > 0 && 
         stockData.map((stock, index) =>{
             return(
-                <StockCard stockId={stock.id} stockLogo={stock.logo} key={index} />
+                <StockCard stockData={stock} key={index} />
             )
         })
       }
