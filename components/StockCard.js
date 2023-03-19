@@ -1,5 +1,15 @@
-import { View, Text, StyleSheet, Image } from 'react-native'
+import { View, Text, StyleSheet, Image, Button } from 'react-native'
 import React,{useState, useEffect} from 'react'
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => {
+  return {
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }}
+})
 
 import axios from 'axios';
 const baseUrl = 'https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/';
@@ -9,7 +19,9 @@ export default function StockCard(props) {
     const [stock, setStock] = useState({})
 
     useEffect(() => {
+      // setInterval(() => {
         getStockData(props.stockId)
+      // }, 5000);
     }, [])
 
     function roundToTwo(num) {
@@ -32,18 +44,41 @@ export default function StockCard(props) {
         });
     }
 
+    const triggerNotifications = async () => {
+      const hasPushNotificationPermissionGranted = await allowsNotificationsAsync()
+
+      if(hasPushNotificationPermissionGranted){
+        await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "You’ve got mail! 📬",
+          body: "Here is the notification body",
+          data: { data: "goes here" },
+        },
+        trigger: { seconds: 10 },
+        });
+      }
+    }
+
   return (
     <View style={styles.stockCard}>
         <Image style={styles.stockLogo} source={{uri:stock.logo}} />
         <View style={{paddingStart: 15}}>
         <Text style={styles.stockName}>{stock.name}</Text>
-        <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-            <Text style={styles.stockPrice}>{stock.currPrice}</Text>
-            <Text style={styles.stockPriceDetails}>{stock.priceChange} ({stock.pricepercentchange})</Text>
+          <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+              <Text style={styles.stockPrice}>{stock.currPrice}</Text>
+              <Text style={styles.stockPriceDetails}>{stock.priceChange} ({stock.pricepercentchange})</Text>
+          </View>
         </View>
-        </View>    
+        <Button onPress={triggerNotifications} title="Trigger" color="#841584" accessibilityLabel="Trigger Local Notifications"/>  
     </View>
   )
+}
+
+export async function allowsNotificationsAsync() {
+  const settings = await Notifications.getPermissionsAsync();
+  return (
+    settings.granted || settings.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
+  );
 }
 
 const styles = StyleSheet.create({
